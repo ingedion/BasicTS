@@ -67,7 +67,8 @@ class BasicTSSoftSensorDataset(BasicTSDataset):
         if measurement_lag < 1:
             raise ValueError(f"measurement_lag must be >= 1, got {measurement_lag}")
         if output_len < measurement_lag:
-            raise ValueError(f"output_len ({output_len}) must be >= measurement_lag ({measurement_lag})")
+            raise ValueError(f"output_len ({output_len}) must be >= measurement_lag ({measurement_lag}). "
+                           "Output horizon must at least cover the measurement lag.")
         
         self.input_len = input_len
         self.output_len = output_len
@@ -75,7 +76,7 @@ class BasicTSSoftSensorDataset(BasicTSDataset):
         self.exclude_target_from_input = exclude_target_from_input
         
         # Convert target_vars to list if single int
-        self.target_vars = [target_vars] if isinstance(target_vars, int) else target_vars
+        self.target_vars = [target_vars] if isinstance(target_vars, int) else list(target_vars)
         self.input_vars = input_vars
         
         # Load data
@@ -104,41 +105,63 @@ class BasicTSSoftSensorDataset(BasicTSDataset):
         # Determine input variable indices
         if self.input_vars is None:
             num_vars = self._data.shape[-1]
+            # Resolve negative indices in target_vars to positive
+            self.target_vars = [v % num_vars for v in self.target_vars]
             if self.exclude_target_from_input:
                 # Use all variables except target variables
                 self.input_vars = [i for i in range(num_vars) if i not in self.target_vars]
             else:
                 # Use all variables including target variables
                 self.input_vars = list(range(num_vars))
+        else:
+            num_vars = self._data.shape[-1]
+            # Resolve negative indices
+            self.target_vars = [v % num_vars for v in self.target_vars]
+            self.input_vars = [v % num_vars for v in self.input_vars]
 
     def __getitem__(self, index: int) -> dict:
         """
         Retrieves a sample from the dataset.
         
-        Key difference from forecasting:
-        - Inputs: process variables (historical window)
-        - Targets: quality variables (lagged by measurement_lag steps)
+        Predictive soft sensor semantics:
+        - At time t, process variables are immediately available, but quality variables
+          measured at time t won't be available until t + measurement_lag (lab analysis delay).
+        - The model predicts output_len steps of quality variables starting from t+1.
+        - The first measurement_lag steps are "estimation" (compensating for measurement delay):
+          these quality values have already occurred but haven't been measured yet.
+        - Steps beyond measurement_lag are genuine "prediction" of future quality values.
+        
+        Data layout:
+            input window:  [index, index + input_len)                    → process variables
+            target window: [index + input_len, index + input_len + output_len)  → quality variables
+            
+            Within the target window:
+            [0, measurement_lag)        → estimation zone (已发生未测量)
+            [measurement_lag, output_len) → prediction zone (未来预测)
+        
+        When output_len == measurement_lag: pure estimation (traditional soft sensor)
+        When output_len >  measurement_lag: estimation + short-term prediction
         
         Args:
             index (int): Sample index.
             
         Returns:
-            dict: Contains 'inputs' (process vars) and 'targets' (quality vars with lag).
+            dict: Contains 'inputs' (process vars) and 'targets' (quality vars).
         """
         item = {}
         
-        # Historical process data
+        # Historical process data: [index, index + input_len)
         history_data = self._data[index: index + self.input_len]
         
-        # Future data for prediction (starting from measurement_lag steps ahead)
-        # The target variables have measurement lag
+        # Target quality variables: [index + input_len, index + input_len + output_len)
+        # First measurement_lag steps = estimation, remaining = prediction
         future_start = index + self.input_len
         future_data = self._data[future_start: future_start + self.output_len]
         
         # Extract input variables (process variables)
         inputs = history_data[..., self.input_vars]
         
-        # Extract target variables (quality variables) from future data
+        # Extract target variables (quality variables)
         targets = future_data[..., self.target_vars]
         
         item["inputs"] = inputs.copy() if self.memmap else inputs

@@ -256,11 +256,22 @@ class BasicTSSoftSensorConfig(BasicTSConfig):
         
         if self.output_len < self.measurement_lag:
             raise ValueError(f"output_len ({self.output_len}) must be >= measurement_lag ({self.measurement_lag}). "
-                           "Soft sensor prediction horizon should cover the measurement lag.")
+                           "Output horizon must at least cover the measurement lag (estimation zone).")
         
         # Convert single target variable to list
         if isinstance(self.target_vars, int):
             self.target_vars = [self.target_vars]
+        
+        # Resolve negative indices in target_vars to positive indices.
+        # This requires knowing num_features from model_config or dataset metadata.
+        # We use model_config.num_features if available.
+        num_features = getattr(self.model_config, 'num_features', None)
+        if num_features is not None:
+            self.target_vars = [v % num_features for v in self.target_vars]
+        
+        # Also resolve input_vars negative indices if provided
+        if self.input_vars is not None and num_features is not None:
+            self.input_vars = [v % num_features for v in self.input_vars]
         
         # Set default checkpoint save directory
         if self.ckpt_save_dir is None:

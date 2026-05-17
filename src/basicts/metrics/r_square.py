@@ -3,37 +3,41 @@ import torch
 
 def masked_r2(prediction: torch.Tensor, targets: torch.Tensor, targets_mask: torch.Tensor = None) -> torch.Tensor:
     """
-    Calculate the Masked R square between the predicted and target values,
-    while ignoring the entries in the target tensor that match the specified null value.
+    Calculate the Masked R-squared (coefficient of determination) between predicted and target values,
+    while ignoring entries marked as null/missing.
 
-    This function is particularly useful for scenarios where the dataset contains missing or irrelevant
-    values (denoted by `null_val`) that should not contribute to the loss calculation. It effectively
-    masks these values to ensure they do not skew the error metrics.
+    R² is always computed globally across the entire batch (and all time steps if present).
+    This avoids the degenerate case where per-sample variance is near zero (e.g., short
+    output sequences or single-channel targets), which would cause R² to explode.
 
     Args:
-        prediction (torch.Tensor): The predicted values as a tensor.
-        target (torch.Tensor): The ground truth values as a tensor with the same shape as `prediction`.
-        null_val (float, optional): The value considered as null or missing in the `target` tensor. 
-            Default is `np.nan`. The function will mask all `NaN` values in the target.
+        prediction (torch.Tensor): Predicted values, shape [B, T, C], [B, T], or [B, C].
+        targets (torch.Tensor): Ground truth values, same shape as prediction.
+        targets_mask (torch.Tensor, optional): Boolean mask of valid entries.
 
     Returns:
-        torch.Tensor: A scalar tensor representing the masked mean absolute error.
-
+        torch.Tensor: Scalar R² value computed globally.
     """
 
     mask = targets_mask if targets_mask is not None else torch.ones_like(targets)
 
     mask = mask.float()
-    prediction, targets = prediction * mask, targets * mask
+    prediction = torch.nan_to_num(prediction) * mask
+    targets = torch.nan_to_num(targets) * mask
 
-    prediction = torch.nan_to_num(prediction)
-    targets = torch.nan_to_num(targets)
+    # Flatten all dimensions to compute a single global R²
+    pred_flat = prediction.reshape(-1)
+    tgt_flat = targets.reshape(-1)
+    mask_flat = mask.reshape(-1)
 
-    ss_res = torch.sum(torch.pow((targets - prediction), 2), dim=1)
-    ss_tot = torch.sum(torch.pow(targets - torch.mean(targets, dim=1, keepdim=True), 2), dim=1)
+    # Only consider valid (masked) entries
+    n_valid = mask_flat.sum()
+    if n_valid < 2:
+        return torch.tensor(0.0, device=prediction.device)
 
-    # 计算 R^2
-    loss = 1 - (ss_res / (ss_tot + 1e-6))
+    tgt_mean = (tgt_flat * mask_flat).sum() / n_valid
+    ss_res = (mask_flat * torch.pow(tgt_flat - pred_flat, 2)).sum()
+    ss_tot = (mask_flat * torch.pow(tgt_flat - tgt_mean, 2)).sum()
 
-    loss = torch.nan_to_num(loss)  # Replace any NaNs in the loss with zero
-    return torch.mean(loss)
+    r2 = 1 - (ss_res / (ss_tot + 1e-6))
+    return torch.nan_to_num(r2)
