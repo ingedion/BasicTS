@@ -3,7 +3,7 @@ from .corr import masked_corr
 from .huber import masked_huber
 from .mae import masked_mae
 from .mape import masked_mape
-from .metric_meter import AvgMeter, RMSEMeter
+from .metric_meter import AvgMeter, R2Meter, RMSEMeter
 from .mse import masked_mse
 from .r_square import masked_r2
 from .rmse import masked_rmse
@@ -25,6 +25,7 @@ ALL_METRICS = {
 
 METRIC_METER = {
     'RMSE': RMSEMeter,
+    'R2': R2Meter,
     'default': AvgMeter
 }
 
