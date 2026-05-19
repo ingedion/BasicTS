@@ -76,6 +76,7 @@ def main():
             "gamma": 0.5
         },
         eval_horizons=[1, 3, 6],
+        save_results=True,
     ))
 
 
