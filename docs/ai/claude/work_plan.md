@@ -132,40 +132,21 @@ analyzer.run_all()
 
 ---
 
-### Task 2.2 — 数据预处理脚本
+### Task 2.2 — 数据预处理脚本 ✅ 已完成（参考实现方式）
 
-**目标**：用户可以从 CSV 快速生成 BasicTS 格式数据
+**目标**：用户可以从原始数据快速生成 BasicTS 格式数据
 
-**功能**：
-```bash
-python scripts/prepare_softsensor_data.py \
-    --input data.csv \
-    --output datasets/MyProcess \
-    --train_ratio 0.7 \
-    --val_ratio 0.1 \
-    --test_ratio 0.2 \
-    --timestamp_col time \
-    --target_cols quality_var1,quality_var2
-```
+**完成情况**：
 
-生成：
-```
-datasets/MyProcess/
-├── meta.json
-├── train_data.npy
-├── train_timestamps.npy
-├── val_data.npy
-├── val_timestamps.npy
-├── test_data.npy
-└── test_timestamps.npy
-```
+经评估，决定不开发通用预处理模块，保持每个数据集独立脚本的方式（与 BasicTS 框架设计一致）。
 
-**涉及文件**：
-- `scripts/prepare_softsensor_data.py`（新增）
+已完成的参考实现：
+- [x] `scripts/data_preparation/Debutanizer/generate_training_data.py` — txt 无时间戳场景
+- [x] `scripts/data_preparation/EthyDistillation/generate_training_data.py` — xlsx 有时间戳场景
 
-**注**：Debutanizer 数据集已通过 `scripts/data_preparation/Debutanizer/generate_training_data.py` 完成接入，可作为通用脚本的参考实现。
+输出格式统一为 npy + meta.json，新数据集只需复制现有脚本修改即可。
 
-**预计工作量**：3-4 小时
+**技术文档**：`docs/ai/claude/ethy_distillation_spec.md`
 
 ---
 
@@ -236,14 +217,15 @@ datasets/MyProcess/
 
 **候选数据集**：
 - [x] Debutanizer Column（经典软测量 benchmark）— 已接入并完成 4 模型 × 2 配置基准
+- [x] Ethylene Distillation Column（乙烯精馏塔）— 已接入并完成基准实验
 - [ ] Sulfur Recovery Unit
 - [ ] Tennessee Eastman Process
 - [ ] 自有工业数据
 
 **已完成**：
-- 数据预处理脚本：`scripts/data_preparation/Debutanizer/`
-- 实验配置：`experiments/Debutanizer_benchmark/`
-- 实验结果：`checkpoints/Debutanizer_benchmark/`
+- 数据预处理脚本：`scripts/data_preparation/Debutanizer/` + `scripts/data_preparation/EthyDistillation/`
+- 实验配置：`experiments/Debutanizer_benchmark/` + `experiments/EthyDistillation_benchmark/`
+- 实验结果：`checkpoints/Debutanizer_benchmark/` + `checkpoints/EthyDistillation_benchmark/`
 
 ---
 
