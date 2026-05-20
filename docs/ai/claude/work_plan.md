@@ -150,15 +150,24 @@ analyzer.run_all()
 
 ---
 
-### Task 2.3 — 单元测试 ⏸️ 暂缓
+### Task 2.3 — 单元测试 ✅ 已完成
 
-**状态**：暂时跳过，当前通过多轮端到端实验验证了代码正确性。待后续合并主仓库或大规模重构时再补充。
+**状态**：已为 Phase 3 新增模块编写单元测试。
+
+**测试文件**：
+- `tests/basicts_test/test_models_pls_svr_lstm.py` — 23 个模型级单元测试（PLS/SVR/LSTM 的实例化、forward、fit、序列化、梯度流等）
+- `tests/basicts_test/test_non_gradient_runner.py` — 3 个集成测试（NonGradientRunner + PLS/SVR 完整 pipeline）
+
+**运行方式**：
+```bash
+python -m pytest tests/basicts_test/ -v
+```
 
 ---
 
 ## Phase 3：传统模型 Baseline 与研究方向
 
-### Task 3.0 — 传统软测量 Baseline 模型 ⭐ 当前优先
+### Task 3.0 — 传统软测量 Baseline 模型 ✅ 已完成
 
 **背景**：Phase 1-2 的实验中 Transformer 系列模型在工业数据集上 R² 均为负值，无法确认是模型问题还是数据/配置问题。需要先用传统模型建立 baseline，确认数据集的可预测性，再评估 Transformer 的增益。
 
@@ -201,7 +210,7 @@ src/basicts/runners/
 
 **实现计划**（按开发顺序）：
 
-#### 3.0.1 — NonGradientRunner 基础设施 + PLS baseline
+#### 3.0.1 — NonGradientRunner 基础设施 + PLS baseline ✅
 
 - 新增 `src/basicts/runners/non_gradient_runner.py`
   - 重写 `train()`：加载全部训练数据 → 调用 `model.fit(X, y)` → 直接进入 test
@@ -212,35 +221,50 @@ src/basicts/runners/
   - `nn.Module` 包装 sklearn `PLSRegression`
   - `fit(X, y)`：展平 [B, T, C] → [B, T*C]，调用 sklearn fit
   - `forward(inputs)`：展平 → predict → reshape 为 [B, output_len, 1]
-- 预计工作量：3-4 小时
 
-#### 3.0.2 — SVR baseline
+#### 3.0.2 — SVR baseline ✅
 
 - 新增 `src/basicts/models/SVR/`
 - `nn.Module` 包装 sklearn `SVR`（RBF 核）
 - 输入方式与 PLS 一致（展平多变量窗口）
-- 多步输出策略：MultiOutputRegressor 或逐步预测
+- 多步输出策略：MultiOutputRegressor（n_jobs=1 避免 Windows 多进程冲突）
 - 复用 NonGradientRunner
-- 预计工作量：1-2 小时
 
-#### 3.0.3 — LSTM baseline
+#### 3.0.3 — LSTM baseline ✅
 
 - 新增 `src/basicts/models/LSTM/`
 - 标准 LSTM encoder → Linear head 结构
-- 支持多变量输入、多步输出
+- 支持多变量输入、多步输出、双向模式
 - 走正常梯度优化 pipeline（BasicTSRunner）
-- 预计工作量：2-3 小时
 
-#### 3.0.4 — 整体实验配置
+#### 3.0.4 — 整体实验配置 ✅
 
-- 统一编写 Debutanizer benchmark 实验配置：
-  - `nlinear_univariate.py` — NLinear 单变量自回归（复用已有模型）
-  - `pls.py` — PLS
-  - `svr.py` — SVR
+- Debutanizer benchmark 实验配置已完成：
+  - `nlinear_univariate.py` — NLinear 单变量自回归
+  - `pls.py` — PLS（NonGradientRunner）
+  - `svr.py` — SVR（NonGradientRunner）
   - `lstm_excl_target.py` / `lstm_incl_target.py` — LSTM
-- 统一编写 EthyDistillation benchmark 实验配置（同上）
-- 更新 `run.sh` 脚本
-- 预计工作量：1 小时
+- `run.sh` 已更新（已有模型注释掉，只跑新 baseline）
+- Debutanizer 实验已全部跑通，analysis 报告已生成
+
+**实验结果（Debutanizer，Overall R²）**：
+
+| 模型 | 配置 | R² |
+|------|------|-----|
+| NLinear | incl_target (单变量) | **0.8739** |
+| TimeXer | incl_target | 0.3709 |
+| PatchTST | incl_target | 0.1437 |
+| PLS | excl_target | **0.0980** |
+| iTransformer | incl_target | -0.3169 |
+| LSTM | incl_target | -0.3640 |
+| SVR | excl_target | -0.5077 |
+| LSTM | excl_target | -0.5834 |
+
+**关键发现**：
+- PLS 在 h1 R²=0.44，确认数据集可预测，过程变量有信息量
+- NLinear 单变量自回归 R²=0.87，说明目标变量自身历史有极强预测力
+- SVR h1 R²=0.11，非线性增益有限（可能因为展平窗口维度过高）
+- LSTM incl_target 的 h1 R²=0.51，但 overall 为负（远期预测差）
 
 **验证数据集**：
 - 先在 Debutanizer 上验证（小数据集，快速迭代）
@@ -276,17 +300,14 @@ src/basicts/runners/
 ### 当前进度
 
 - **Phase 1**: ✅ 全部完成
-- **Phase 2**: ✅ Task 2.1 + 2.2 完成，Task 2.3 暂缓
-- **Phase 3**: 🔄 Task 3.0（传统 Baseline）为当前优先任务
+- **Phase 2**: ✅ Task 2.1 + 2.2 + 2.3 全部完成
+- **Phase 3**: ✅ Task 3.0（传统 Baseline）已完成，Debutanizer 实验已跑通
 
 ### 下一步行动
 
-1. 实现 NonGradientRunner + PLS 模型（Task 3.0.1）— 基础设施 + 首个非梯度模型
-2. 实现 SVR 模型（Task 3.0.2）— 复用 NonGradientRunner
-3. 实现 LSTM 模型（Task 3.0.3）— 梯度优化模型
-4. 统一编写所有 baseline 实验配置（Task 3.0.4）— NLinear/PLS/SVR/LSTM
-5. 在 Debutanizer 上验证 baseline R² > 0
-6. 迁移到 EthyDistillation 并与 Transformer 对比
+1. 在 EthyDistillation 上跑传统 baseline 实验
+2. 综合分析 Debutanizer + EthyDistillation 结果，确定 Transformer 调优方向
+3. 根据实验结论决定是否需要调整 input_len / lag / 模型超参
 
 ### 项目结构（软测量相关）
 
@@ -359,7 +380,11 @@ python -m basicts.analysis -e checkpoints/EthyDistillation_benchmark
 | 数据集 | 最佳模型 | 最佳 R² | 配置 |
 |--------|----------|---------|------|
 | ETTh1 | TimeXer | 0.424 | incl_target, lag=6, out=12 |
-| Debutanizer | TimeXer | 0.424 | incl_target, lag=3, out=6 |
+| Debutanizer | NLinear | 0.874 | incl_target (单变量), lag=3, out=6 |
+| Debutanizer | PLS | 0.098 | excl_target, lag=3, out=6 |
 | EthyDistillation | TimeXer | -2.44 | incl_target, lag=6, out=12 |
 
-**结论**：EthyDistillation 需要传统 baseline 确认数据可预测性后再调优 Transformer。
+**结论**：
+- Debutanizer 数据集可预测性已确认（PLS h1 R²=0.44，NLinear overall R²=0.87）
+- 目标变量自身历史是最强预测信号（NLinear 单变量远超所有多变量模型）
+- EthyDistillation 仍需传统 baseline 验证

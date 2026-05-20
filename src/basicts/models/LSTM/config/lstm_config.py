@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from basicts.configs import BasicTSModelConfig
+from basicts.configs.model_config import BasicTSModelConfig
 
 
 @dataclass
