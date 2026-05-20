@@ -72,14 +72,17 @@ class ExperimentVisualizer:
             metrics = ["R2", "RMSE"]
 
         n_metrics = len(metrics)
-        fig, axes = plt.subplots(1, n_metrics, figsize=(6 * n_metrics, 6))
+        n_experiments = len(self.results)
+        # Adaptive width: at least 6 per metric, scale with experiment count
+        fig_width = max(6 * n_metrics, n_experiments * 0.9 * n_metrics)
+        fig, axes = plt.subplots(1, n_metrics, figsize=(fig_width, 6))
         if n_metrics == 1:
             axes = [axes]
 
-        # Prepare data
+        # Prepare data — single-line labels
         labels = []
         for r in self.results:
-            labels.append(f"{r.model_name}\n({r.config_label})")
+            labels.append(f"{r.model_name} ({r.config_label})")
 
         for ax, metric in zip(axes, metrics):
             values = []
@@ -92,7 +95,7 @@ class ExperimentVisualizer:
 
             bars = ax.bar(range(len(values)), values, color=colors, alpha=0.8, edgecolor="black", linewidth=0.5)
             ax.set_xticks(range(len(labels)))
-            ax.set_xticklabels(labels, fontsize=8, ha="center")
+            ax.set_xticklabels(labels, fontsize=8, rotation=45, ha="right")
             ax.set_ylabel(metric, fontsize=12)
             ax.set_title(f"Overall {metric}", fontsize=13, fontweight="bold")
             ax.axhline(y=0, color="gray", linestyle="--", linewidth=0.8, alpha=0.6)
@@ -219,7 +222,7 @@ class ExperimentVisualizer:
             print("No soft sensor experiments with measurement_lag found.")
             return None
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(max(10, len(ss_results) * 1.2), 6))
 
         labels = []
         est_values = []
@@ -245,7 +248,7 @@ class ExperimentVisualizer:
             est_avg = np.mean(est_metrics) if est_metrics else 0
             pred_avg = np.mean(pred_metrics) if pred_metrics else 0
 
-            labels.append(f"{r.model_name}\n({r.config_label})")
+            labels.append(f"{r.model_name} ({r.config_label})")
             est_values.append(est_avg)
             pred_values.append(pred_avg)
 
@@ -261,7 +264,7 @@ class ExperimentVisualizer:
         ax.set_ylabel(metric, fontsize=12)
         ax.set_title(f"Estimation Zone vs Prediction Zone — {metric}", fontsize=13, fontweight="bold")
         ax.set_xticks(x)
-        ax.set_xticklabels(labels, fontsize=8, ha="center")
+        ax.set_xticklabels(labels, fontsize=8, rotation=45, ha="right")
         ax.axhline(y=0, color="gray", linestyle="--", linewidth=0.8, alpha=0.6)
         ax.legend(fontsize=10)
         ax.grid(axis="y", alpha=0.3)

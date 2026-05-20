@@ -91,7 +91,8 @@ class BasicTSLauncher:
             cfg.test_batch_size = batch_size
 
         # initialize the runner
-        runner = BasicTSRunner(cfg)
+        runner_cls = getattr(cfg, 'runner', None) or BasicTSRunner
+        runner = runner_cls(cfg)
 
         # initialize the logger for the runner
         runner.init_logger(logger_name="BasicTS-evaluation", log_file_name="evaluation_log")
@@ -100,8 +101,9 @@ class BasicTSLauncher:
         runner.eval(ckpt_path)
 
 def training_func(cfg: BasicTSConfig):
-    # init runner
-    runner = BasicTSRunner(cfg)
+    # init runner - use configured runner class or default BasicTSRunner
+    runner_cls = getattr(cfg, 'runner', None) or BasicTSRunner
+    runner = runner_cls(cfg)
     # init logger (after making ckpt save dir)
     runner.init_logger(logger_name="BasicTS-training", log_file_name="training_log")
     # train
