@@ -14,6 +14,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 
+
+def _setup_cjk_font():
+    """尝试设置支持中文的字体，返回是否成功。"""
+    import matplotlib.font_manager as fm
+    # 常见中文字体优先级列表
+    cjk_fonts = ["SimHei", "Microsoft YaHei", "WenQuanYi Micro Hei",
+                 "Noto Sans CJK SC", "PingFang SC", "STHeiti"]
+    available = {f.name for f in fm.fontManager.ttflist}
+    for font in cjk_fonts:
+        if font in available:
+            plt.rcParams["font.sans-serif"] = [font] + plt.rcParams["font.sans-serif"]
+            plt.rcParams["axes.unicode_minus"] = False
+            return True
+    return False
+
+
+_CJK_AVAILABLE = _setup_cjk_font()
+
 if TYPE_CHECKING:
     from .models import ExperimentConfig
 
@@ -116,12 +134,14 @@ class PredictionPlotter:
             target_h = target_h[:n_display]
 
             # Plot ground truth and prediction
+            gt_label = "真实值" if _CJK_AVAILABLE else "Ground Truth"
+            pred_label = "预测值" if _CJK_AVAILABLE else "Prediction"
             ax.plot(
                 range(len(target_h)),
                 target_h,
                 color="#333333",
                 linewidth=1.2,
-                label="真实值",
+                label=gt_label,
             )
             ax.plot(
                 range(len(pred_h)),
@@ -129,7 +149,7 @@ class PredictionPlotter:
                 color="#2196F3",
                 linewidth=1.0,
                 alpha=0.8,
-                label="预测值",
+                label=pred_label,
             )
 
             # Annotate title with R2 value
