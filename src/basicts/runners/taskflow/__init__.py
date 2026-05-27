@@ -1,5 +1,6 @@
 from .basicts_taskflow import BasicTSTaskFlow
 from .classification_taskflow import BasicTSClassificationTaskFlow
+from .encdec_ss_taskflow import EncDecSoftSensorTaskFlow
 from .forecasting_taskflow import BasicTSForecastingTaskFlow
 from .imputation_taskflow import BasicTSImputationTaskFlow
 from .softsensor_taskflow import BasicTSSoftSensorTaskFlow

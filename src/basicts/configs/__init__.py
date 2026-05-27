@@ -5,6 +5,7 @@ from .tsc_config import BasicTSClassificationConfig
 from .tsf_config import BasicTSForecastingConfig
 from .tsfm_config import BasicTSFoundationModelConfig
 from .tsi_config import BasicTSImputationConfig
+from .encdec_ss_config import EncDecSoftSensorConfig
 
 __ALL__ = ['BasicTSConfig',
            'BasicTSForecastingConfig',
@@ -12,4 +13,5 @@ __ALL__ = ['BasicTSConfig',
            'BasicTSImputationConfig',
            'BasicTSFoundationModelConfig',
            'BasicTSSoftSensorConfig',
+           'EncDecSoftSensorConfig',
            'BasicTSModelConfig']
