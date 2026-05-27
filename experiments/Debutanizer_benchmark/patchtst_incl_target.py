@@ -1,9 +1,14 @@
 """
-PatchTST Predictive Soft Sensor on Debutanizer - Target Included.
+PatchTST Predictive Soft Sensor on Debutanizer.
 
-Configuration: exclude_target_from_input=False
+Configuration: exclude_target_from_input=False (必须包含目标变量)
 Input: 8 variables (u1~u7 + y), Target: y (butane content)
 Predictive mode: lag=3, output=6 (3 estimation + 3 prediction)
+
+NOTE: PatchTST 是 channel-independent 的 encoder-only 模型，每个通道独立建模，
+无法建立"过程变量 → 目标变量"的跨通道映射关系。因此 PatchTST 不支持
+exclude_target_from_input=True 模式。在该模式下模型输出的通道索引与目标变量
+索引不对应，且即使修正索引，channel-independent 架构也无法从过程变量推断目标变量。
 """
 
 from torch.optim.lr_scheduler import MultiStepLR
@@ -56,7 +61,7 @@ def main():
         output_len=6,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/Debutanizer_benchmark/PatchTSTForForecasting",
+        ckpt_save_dir="checkpoints/Debutanizer_benchmark/PatchTST_incl",
 
         # Training
         gpus="0",

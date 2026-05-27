@@ -1,9 +1,16 @@
 """
-iTransformer Predictive Soft Sensor on Debutanizer - Target Included.
+iTransformer Predictive Soft Sensor on Debutanizer.
 
-Configuration: exclude_target_from_input=False
+Configuration: exclude_target_from_input=False (必须包含目标变量)
 Input: 8 variables (u1~u7 + y), Target: y (butane content)
 Predictive mode: lag=3, output=6 (3 estimation + 3 prediction)
+
+NOTE: iTransformer 虽然通过 inverted attention 实现了跨通道建模，但其 forecasting head
+采用 N 输入通道 → N 输出通道的设计（每个通道共享同一个 Linear 映射），无法在输入中
+不包含目标变量的情况下生成目标变量的预测。当 exclude_target_from_input=True 时，
+模型输出的通道数等于输入过程变量数，postprocess 中用原始 target_vars 索引提取预测
+会导致索引错位，实际取到的是其他过程变量的预测值。因此 iTransformer 不支持
+exclude_target_from_input=True 模式。
 """
 
 from torch.optim.lr_scheduler import MultiStepLR
@@ -45,7 +52,7 @@ def main():
         output_len=6,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/Debutanizer_benchmark/iTransformerForForecasting",
+        ckpt_save_dir="checkpoints/Debutanizer_benchmark/iTransformer_incl",
 
         # Training
         gpus="0",

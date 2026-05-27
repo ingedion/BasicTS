@@ -47,7 +47,7 @@ def main():
         output_len=6,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/Debutanizer_benchmark/LSTM",
+        ckpt_save_dir="checkpoints/Debutanizer_benchmark/LSTM_excl",
 
         # Training
         gpus="0",

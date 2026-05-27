@@ -40,7 +40,7 @@ def main():
         output_len=6,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/Debutanizer_benchmark/DLinear",
+        ckpt_save_dir="checkpoints/Debutanizer_benchmark/DLinear_excl",
 
         # Training
         gpus="0",

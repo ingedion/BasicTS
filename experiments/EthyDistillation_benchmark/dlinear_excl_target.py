@@ -40,7 +40,7 @@ def main():
         output_len=12,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/DLinear",
+        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/DLinear_excl",
 
         # Training
         gpus="0",

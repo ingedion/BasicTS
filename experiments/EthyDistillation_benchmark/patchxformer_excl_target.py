@@ -54,7 +54,7 @@ def main():
         output_len=12,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/PatchXformerForForecasting",
+        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/PatchXformer_excl",
 
         # Training
         gpus="0",

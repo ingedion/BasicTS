@@ -46,7 +46,7 @@ def main():
         output_len=12,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/TimeXer",
+        ckpt_save_dir="checkpoints/EthyDistillation_benchmark/TimeXer_incl",
 
         # Training
         gpus="0",

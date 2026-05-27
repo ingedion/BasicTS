@@ -1,9 +1,14 @@
 """
-TimeXer Predictive Soft Sensor on Debutanizer - Target Included.
+TimeXer Predictive Soft Sensor on Debutanizer.
 
-Configuration: exclude_target_from_input=False
+Configuration: exclude_target_from_input=False (必须包含目标变量)
 Input: 8 variables (u1~u7 + y), Target: y (butane content)
 Predictive mode: lag=3, output=6 (3 estimation + 3 prediction)
+
+NOTE: TimeXer 虽然通过 cross-attention 引入外生变量信息，但本质仍是 encoder-only 架构，
+其输出通道数等于输入通道数（N→N）。当 exclude_target_from_input=True 时，目标变量
+不在输入中，模型无法为其生成预测通道，且 postprocess 中用原始 target_vars 索引提取
+预测会导致索引错位。因此 TimeXer 不支持 exclude_target_from_input=True 模式。
 """
 
 from torch.optim.lr_scheduler import MultiStepLR
@@ -46,7 +51,7 @@ def main():
         output_len=6,
 
         # Checkpoint
-        ckpt_save_dir="checkpoints/Debutanizer_benchmark/TimeXer",
+        ckpt_save_dir="checkpoints/Debutanizer_benchmark/TimeXer_incl",
 
         # Training
         gpus="0",
